@@ -1,0 +1,26 @@
+Windows 1920 1080
+Font fonts\Freedom.ttf 12 255 255 255
+Circle CGreen 100 400 -0.3 0.5 0 255 0 50
+Circle CBlue 600 200 0.3 0.4 0 0 255 100
+Circle CPurple 300 500 -0.2 -0.5 255 0 255 75
+Rectangle RRed 800 400 0.7 0.15 255 0 0 50 25
+Rectangle RGrey 640 450 -0.2 0.6 100 100 100 50 100
+Rectangle RTeal 25 100 -0.5 -0.5 0 255 255 100 100
+Rectangle SGreen 100 550 -0.5 -0.2 0 128 0 150 150
+Triangle TGrey 300 50 400 50 350 150 -0.34 -0.28 100 100 100
+Ellipse ERed 170 50 -0.46 -0.22 255 10 0 50 40
+Ellipse EGreen 300 800 0.15 0.1 0 255 0 80 60
+Ellipse EBlue 1400 600 -0.25 -0.2 0 0 255 100 70
+Circle CYellow 1200 300 0.2 -0.4 255 255 0 40
+Circle CPaleBlue 1500 400 0.25 0.3 173 216 230 45
+Circle CPaleGreen 800 600 0.4 -0.2 152 251 152 35
+Rectangle RYellow 300 300 0.2 0.3 255 255 0 70 40
+Rectangle ROrange 700 400 0.1 -0.2 255 165 0 50 30
+Ellipse EOrange 1700 800 -0.2 0.1 255 165 0 70 35
+Rectangle RPaleGreen 900 500 -0.4 0.2 152 251 152 40 45
+Ellipse EPaleGreen 1100 600 -0.25 -0.2 152 251 152 30 50
+Rectangle RPaleBlue 1600 200 0.25 0.2 173 216 230 60 35
+Ellipse EPaleBlue 400 400 0.15 0.3 173 216 230 55 45
+Triangle TPaleGreen 1400 200 1500 200 1450 300 0.4 0.2 152 251 152
+Ellipse EYellow 1300 500 -0.1 -0.2 255 255 0 50 30
+Circle COrange 1000 700 -0.1 -0.2 255 165 0 60

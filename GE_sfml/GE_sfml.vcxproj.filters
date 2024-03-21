@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="header\Entity.cpp" />
+    <ClCompile Include="header\EntityManager.cpp" />
+    <ClCompile Include="header\Vec2.cpp" />
+    <ClCompile Include="header\Game.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="config.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\cornate.otf" />
+    <Font Include="fonts\Courier New.ttf" />
+    <Font Include="fonts\CourierNewBoldItalicfont.ttf" />
+    <Font Include="fonts\Freedom.ttf" />
+    <Font Include="fonts\NatureBeauty.ttf" />
+    <Font Include="fonts\ArialRegular.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="header\CommonHF.h" />
+    <ClInclude Include="header\Components.h" />
+    <ClInclude Include="header\Entity.h" />
+    <ClInclude Include="header\EntityManager.h" />
+    <ClInclude Include="header\Vec2.h" />
+    <ClInclude Include="header\Game.h" />
+  </ItemGroup>
+</Project>
