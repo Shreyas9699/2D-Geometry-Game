@@ -39,6 +39,7 @@ ptr<Entity> EntityManager::addEntity(const std::string& tag)
 {
 	auto e = ptr<Entity>(new Entity(m_totalEntities++, tag));
 	m_entitiesToAdd.push_back(e);
+	return e;
 }
 
 const EntityVec& EntityManager::getEntities()
