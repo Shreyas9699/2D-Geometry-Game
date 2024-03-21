@@ -69,7 +69,7 @@ void Game::spawnPlayer()
 
 void Game::sEnemySpawner()
 {
-    // user m_currentFrame - m_lastEnemySpawnTime to determine how long it has been
+    // use m_currentFrame - m_lastEnemySpawnTime to determine how long it has been
     // since last enemy spawned
     spawnEnemy();
 }
@@ -149,19 +149,39 @@ void Game::sMovement()
     }
 
     m_player->cTrasnform->velocity = playerVelocity;
-    m_player->cTrasnform->pos += m_player->cTrasnform->velocity;
+
+    // Check for collisions with window boundaries and clamp velocity
+    float windowWidth = static_cast<float>(m_window.getSize().x);
+    float windowHeight = static_cast<float>(m_window.getSize().y);
+    float playerRadius = m_player->cShape->circle.getRadius(); // Assuming circle shape
+
+    // Clamp X velocity
+    if (m_player->cTrasnform->pos.x - playerRadius + m_player->cTrasnform->velocity.x < 0) {
+        m_player->cTrasnform->velocity.x = 0.0f; // Prevent going off-screen left
+    }
+    else if (m_player->cTrasnform->pos.x + playerRadius + m_player->cTrasnform->velocity.x > windowWidth) {
+        m_player->cTrasnform->velocity.x = 0.0f; // Prevent going off-screen right
+    }
+
+    // Clamp Y velocity
+    if (m_player->cTrasnform->pos.y - playerRadius + m_player->cTrasnform->velocity.y < 0) {
+        m_player->cTrasnform->velocity.y = 0.0f; // Prevent going off-screen top
+    }
+    else if (m_player->cTrasnform->pos.y + playerRadius + m_player->cTrasnform->velocity.y > windowHeight) {
+        m_player->cTrasnform->velocity.y = 0.0f; // Prevent going off-screen bottom
+    }
     
-    // to update all entities position
-    //for (auto& e : m_entities.getEntities())
-    //{
-    //    e->cTrasnform->pos += e->cTrasnform->velocity;
-    //}
+    // to update all entities i.e enemies position
+    for (auto& e : m_entities.getEntities())
+    {
+        e->cTrasnform->pos += e->cTrasnform->velocity;
+    }
 }
 
 void Game::sUserInput()
 {
     // handle user input
-    //  only be setting the playes input componenet variables here
+    // only be setting the playes input componenet variables here
     // you should not implement the playes movement logic here
     // the movement system will read the variables set in this function
 
@@ -175,78 +195,14 @@ void Game::sUserInput()
         }
 
         // event when WASD keys are pressed
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        {
-            m_player->cInput->down = true;
-        }
-        else
-        {
-            m_player->cInput->down = false;
-        }
+        // event when WASD keys are pressed
+        m_player->cInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+        m_player->cInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+        m_player->cInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+        m_player->cInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        {
-            m_player->cInput->up = true;
-        }
-        else
-        {
-            m_player->cInput->up = false;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-        {
-            m_player->cInput->left = true;
-        }
-        else
-        {
-            m_player->cInput->left = false;
-        }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-        {
-            m_player->cInput->right = true;
-        }
-        else
-        {
-            m_player->cInput->right = false;
-        }
-
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-        {
-            m_player->cInput->shoot = true;
-        }
-        else
-        {
-            m_player->cInput->shoot = false;
-        }
-
-        // Check for collisions with window edges
-        // Check for collisions with window edges
-        float vx = m_player->cTrasnform->pos.x;
-        float vy = m_player->cTrasnform->pos.y;
-        float playerWidth = m_player->cShape->circle.getGlobalBounds().width;
-        float playerHeight = m_player->cShape->circle.getGlobalBounds().height;
-        int winWidth = m_window.getSize().x;
-        int winHeight = m_window.getSize().y;
-
-        // Ensure player stays within window bounds
-        if (vx < 0.f) {
-            vx = 0.f;
-        }
-        else if (vx + playerWidth > winWidth) {
-            vx = winWidth - playerWidth;
-        }
-
-        if (vy < 0.f) {
-            vy = 0.f;
-        }
-        else if (vy + playerHeight > winHeight) {
-            vy = winHeight - playerHeight;
-        }
-
-        // Update player's position
-        m_player->cTrasnform->pos.x = vx;
-        m_player->cTrasnform->pos.y = vy;
+        // event when mouse button pressed, both left and right
+        m_player->cInput->shoot = sf::Mouse::isButtonPressed(sf::Mouse::Left);
 
         // event when mouce button pressed, both left and right
     }
@@ -282,18 +238,11 @@ void Game::sRender()
     m_window.clear();
 
     // sample om how to draw a player, need to do same to draw emeny and bullets
-    m_player->cShape->circle.setPosition(m_player->cTrasnform->pos.x, m_player->cTrasnform->pos.y);
-    
-    
-    m_player->cTrasnform->angle += 1.0f;
-    m_player->cShape->circle.setRotation(m_player->cTrasnform->angle);
-    m_window.draw(m_player->cShape->circle);
-
     for (auto e : m_entities.getEntities())
     {
         e->cShape->circle.setPosition(e->cTrasnform->pos.x, e->cTrasnform->pos.y);
         e->cTrasnform->angle += 1.0f;
-        e->cShape->circle.setRotation(m_player->cTrasnform->angle);
+        e->cShape->circle.setRotation(e->cTrasnform->angle);
         m_window.draw(e->cShape->circle);
     }
     m_window.display();
