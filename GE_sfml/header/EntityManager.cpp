@@ -49,5 +49,14 @@ const EntityVec& EntityManager::getEntities()
 
 const EntityVec& EntityManager::getEntities(const std::string tag)
 {
-	return m_entityMap[tag];
+	if (m_entityMap.find(tag) != m_entityMap.end())
+	{
+		return m_entityMap.find(tag)->second;
+	}
+	else
+	{
+		// if the tag its not in the game it return an empty vector
+		static EntityVec emptyEntityVec; // Empty vector
+		return emptyEntityVec;
+	}
 }
