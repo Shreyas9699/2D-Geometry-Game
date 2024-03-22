@@ -18,7 +18,7 @@ class Entity
 	Entity(const size_t id, const std::string& tag);
 
 public:
-	ptr<CTransform>	cTrasnform;
+	ptr<CTransform>	cTransform;
 	ptr<CShape>		cShape;
 	ptr<CCollision>	cBBox;
 	ptr<CScore>		cScore;

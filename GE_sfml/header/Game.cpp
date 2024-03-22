@@ -5,9 +5,9 @@ Game::Game(const std::string& config)
 	init(config);
 }
 
-// need to do some changes based on the config file
 void Game::init(const std::string& config)
 {
+    // reads all necessary details about player, enemies, bullets from config files and loads it.
     std::ifstream fin(config);
 
     // Check if the file is successfully opened 
@@ -17,23 +17,67 @@ void Game::init(const std::string& config)
     }
 
     // default values
-    int winWidth = 1280, winHeight = 720, FPS = 60;
+    int winWidth = 1280, winHeight = 720, FPS = 60, fsMode = 1;
 
-    // Player input
-    fin >> m_playerConfig.SR >> m_playerConfig.CR >> m_playerConfig.S >> m_playerConfig.FR >> m_playerConfig.FG
-        >> m_playerConfig.FB >> m_playerConfig.OR >> m_playerConfig.OG >> m_playerConfig.OB >> m_playerConfig.OT
-        >> m_playerConfig.V;
+    std::string fontFileName;
+    int fontSize, fontR, fontG, fontB;
 
-    /* other detail to be loaded*/
+    std::string line;
+    while (std::getline(fin, line)) {
+        std::istringstream iss(line);
+        std::string type;
+        iss >> type;
 
-
+        if (type == "Window") {
+            iss >> winWidth >> winHeight >> FPS >> fsMode;
+        }
+        else if (type == "Font") {
+            iss >> fontFileName >> fontSize >> fontR >> fontG >> fontB;
+        }
+        else if (type == "Player") {
+            iss >> m_playerConfig.SR >> m_playerConfig.CR >> m_playerConfig.S >> m_playerConfig.FR >> m_playerConfig.FB
+                >> m_playerConfig.FG >> m_playerConfig.OR >> m_playerConfig.OG >> m_playerConfig.OB >> m_playerConfig.OT
+                >> m_playerConfig.V;
+        }
+        else if (type == "Enemy") {
+            iss >> m_enemyConfig.SR >> m_enemyConfig.CR >> m_enemyConfig.SMIN >> m_enemyConfig.SMAX >> m_enemyConfig.OR
+                >> m_enemyConfig.OG >> m_enemyConfig.OB >> m_enemyConfig.OT >> m_enemyConfig.VMIN >> m_enemyConfig.VMAX
+                >> m_enemyConfig.L >> m_enemyConfig.SI;
+        }
+        else if (type == "Bullet") {
+            iss >> m_bulletConfig.SR >> m_bulletConfig.CR >> m_bulletConfig.S >> m_bulletConfig.FR >> m_bulletConfig.FG
+                >> m_bulletConfig.FB >> m_bulletConfig.OR >> m_bulletConfig.OG >> m_bulletConfig.OB >> m_bulletConfig.OT
+                >> m_bulletConfig.V >> m_bulletConfig.L;
+        }
+    }
     fin.close();
+
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
-    m_window.create(sf::VideoMode(winWidth, winHeight), "SFML Game!", sf::Style::Default, settings);
+    if (fsMode) {
+        m_window.create(sf::VideoMode(winWidth, winHeight), "My SFML Game", sf::Style::Fullscreen);
+    }
+    else
+    {
+        m_window.create(sf::VideoMode(winWidth, winHeight), "SFML Game!", sf::Style::Default, settings);
+    }
     m_window.setFramerateLimit(FPS);
 
+ 
+    if (!m_font.loadFromFile(fontFileName))
+    {
+        // if can't load the font file
+        std::cerr << "Failed to load font\n";
+        exit(-1);
+    }
+
+    m_text.setFont(m_font);
+    m_text.setCharacterSize(fontSize);
+    m_text.setString("Score : ");
+    m_text.setFillColor(sf::Color(fontR, fontG, fontB));
+    sf::FloatRect textRect = m_text.getLocalBounds();
+    m_text.setPosition(0, 0);
     spawnPlayer();
 }
 
@@ -48,7 +92,6 @@ void Game::run()
         sCollision();
         sUserInput();
         sRender();
-
         m_currentFrame++;
     }
 }
@@ -61,8 +104,8 @@ void Game::setPaused(bool paused)
 void Game::spawnPlayer()
 {
     auto e = m_entities.addEntity("player");
-    e->cTrasnform = std::make_shared<CTransform>(Vec2(200, 200), Vec2(1.0f, 1.0f), 0.0f);
-    e->cShape = std::make_shared<CShape>(32.0f, 8, sf::Color(10, 10, 10), sf::Color(255, 0, 0), 4.0f);
+    e->cTransform = std::make_shared<CTransform>(Vec2(200, 200), Vec2(1.0f, 1.0f), 0.0f);
+    e->cShape = std::make_shared<CShape>(32.0f, 8, sf::Color(sf::Color::White), sf::Color(255, 0, 0), 4.0f);
     e->cInput = std::make_shared<CInput>();
     m_player = e;
 }
@@ -78,18 +121,18 @@ void Game::spawnEnemy()
 {
     /* Enemy is spawned properly witht he m_enemyConfig variable
        The enemy must be spawned completely within the bounds of the window */
-    auto e = m_entities.addEntity("player");
-    e->cTrasnform = std::make_shared<CTransform>(Vec2(100, 100), Vec2(1.0f, 1.0f), 0.0f);
+    auto e = m_entities.addEntity("enemy");
+    e->cTransform = std::make_shared<CTransform>(Vec2(100, 100), Vec2(1.0f, 1.0f), 0.0f);
     e->cShape = std::make_shared<CShape>(40.0f, 6, sf::Color(20, 120, 150), sf::Color(0, 255, 0), 5.0f);
     e->cInput = std::make_shared<CInput>();
 
-    auto e1 = m_entities.addEntity("player");
-    e1->cTrasnform = std::make_shared<CTransform>(Vec2(400, 250), Vec2(1.0f, 1.0f), 0.0f);
+    auto e1 = m_entities.addEntity("enemy");
+    e1->cTransform = std::make_shared<CTransform>(Vec2(400, 250), Vec2(1.0f, 1.0f), 0.0f);
     e1->cShape = std::make_shared<CShape>(25.0f, 3, sf::Color(150, 10, 200), sf::Color(0, 0, 255), 5.0f);
     e1->cInput = std::make_shared<CInput>();
 
-    auto e3 = m_entities.addEntity("player");
-    e3->cTrasnform = std::make_shared<CTransform>(Vec2(600, 500), Vec2(1.0f, 1.0f), 0.0f);
+    auto e3 = m_entities.addEntity("enemy");
+    e3->cTransform = std::make_shared<CTransform>(Vec2(600, 500), Vec2(1.0f, 1.0f), 0.0f);
     e3->cShape = std::make_shared<CShape>(25.0f, 5, sf::Color(90, 140, 230), sf::Color(0, 255, 255), 5.0f);
     e3->cInput = std::make_shared<CInput>();
 
@@ -129,6 +172,12 @@ void Game::spawnSpecialWeapon(ptr<Entity> e)
 
 void Game::sMovement()
 {
+    // Reset the position of the circle shape before moving the entities
+    for (auto& e : m_entities.getEntities())
+    {
+        e->cShape->circle.setPosition(e->cTransform->pos.x, e->cTransform->pos.y);
+    }
+
     // should read the m_player->cInput component to determine if the player is moving
     Vec2 playerVelocity;
     if (m_player->cInput->left)
@@ -148,7 +197,7 @@ void Game::sMovement()
         playerVelocity.y -= 5.0f;
     }
 
-    m_player->cTrasnform->velocity = playerVelocity;
+    m_player->cTransform->velocity = playerVelocity;
 
     // Check for collisions with window boundaries and clamp velocity
     float windowWidth = static_cast<float>(m_window.getSize().x);
@@ -156,34 +205,32 @@ void Game::sMovement()
     float playerRadius = m_player->cShape->circle.getRadius(); // Assuming circle shape
 
     // Clamp X velocity
-    if (m_player->cTrasnform->pos.x - playerRadius + m_player->cTrasnform->velocity.x < 0) {
-        m_player->cTrasnform->velocity.x = 0.0f; // Prevent going off-screen left
+    if (m_player->cTransform->pos.x - playerRadius + m_player->cTransform->velocity.x < 0) {
+        m_player->cTransform->velocity.x = 0.0f; // Prevent going off-screen left
     }
-    else if (m_player->cTrasnform->pos.x + playerRadius + m_player->cTrasnform->velocity.x > windowWidth) {
-        m_player->cTrasnform->velocity.x = 0.0f; // Prevent going off-screen right
+    else if (m_player->cTransform->pos.x + playerRadius + m_player->cTransform->velocity.x > windowWidth) {
+        m_player->cTransform->velocity.x = 0.0f; // Prevent going off-screen right
     }
 
     // Clamp Y velocity
-    if (m_player->cTrasnform->pos.y - playerRadius + m_player->cTrasnform->velocity.y < 0) {
-        m_player->cTrasnform->velocity.y = 0.0f; // Prevent going off-screen top
+    if (m_player->cTransform->pos.y - playerRadius + m_player->cTransform->velocity.y < 0) {
+        m_player->cTransform->velocity.y = 0.0f; // Prevent going off-screen top
     }
-    else if (m_player->cTrasnform->pos.y + playerRadius + m_player->cTrasnform->velocity.y > windowHeight) {
-        m_player->cTrasnform->velocity.y = 0.0f; // Prevent going off-screen bottom
+    else if (m_player->cTransform->pos.y + playerRadius + m_player->cTransform->velocity.y > windowHeight) {
+        m_player->cTransform->velocity.y = 0.0f; // Prevent going off-screen bottom
     }
     
-    // to update all entities i.e enemies position
+
+    // Move the enemy entities
     for (auto& e : m_entities.getEntities())
     {
-        e->cTrasnform->pos += e->cTrasnform->velocity;
+        e->cTransform->pos += e->cTransform->velocity;
     }
 }
 
 void Game::sUserInput()
 {
-    // handle user input
-    // only be setting the playes input componenet variables here
-    // you should not implement the playes movement logic here
-    // the movement system will read the variables set in this function
+    // handle user input, move player and to be able to shoot and special weapon 
 
     sf::Event event;
     while (m_window.pollEvent(event))
@@ -237,14 +284,27 @@ void Game::sRender()
 {
     m_window.clear();
 
-    // sample om how to draw a player, need to do same to draw emeny and bullets
+    // Draw Score
+    m_window.draw(m_text);
+
+    // Render entities
     for (auto e : m_entities.getEntities())
     {
-        e->cShape->circle.setPosition(e->cTrasnform->pos.x, e->cTrasnform->pos.y);
-        e->cTrasnform->angle += 1.0f;
-        e->cShape->circle.setRotation(e->cTrasnform->angle);
+        // Calculate the position of the entity
+        float posX = e->cTransform->pos.x;
+        float posY = e->cTransform->pos.y;
+
+        // Set the position of the shape in the entity
+        e->cShape->circle.setPosition(posX, posY);
+
+        // Rotate the shape for visual interest
+        float angle = 1.0f;
+        e->cShape->circle.rotate(angle);
+
+        // Draw the shape of the entity
         m_window.draw(e->cShape->circle);
     }
+
     m_window.display();
 }
 

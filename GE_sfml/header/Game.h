@@ -19,7 +19,7 @@ struct EnemyConfig
 
 struct BulletConfig 
 {
-	int SR, CR, FR, FG, FB, OR, OG, OB, OT, V; 
+	int SR, CR, FR, FG, FB, OR, OG, OB, OT, V, L; 
 	float S;
 };
 
