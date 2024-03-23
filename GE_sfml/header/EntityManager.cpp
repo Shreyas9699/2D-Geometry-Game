@@ -7,7 +7,7 @@ void EntityManager::update()
 	// to add entities from m_entitiesToAdd the both vector of all entities and entity Map
 	// remove all dead entities from both vector of all entities and entity Map
 
-	for (auto e : m_entitiesToAdd)
+	for (auto& e : m_entitiesToAdd)
 	{
 		m_entities.push_back(e);
 		m_entityMap[e->tag()].push_back(e);
@@ -30,9 +30,8 @@ void EntityManager::removeDeadEntities(EntityVec& vec)
 	// Instead, it reorders the elements in the range so that the elements to be removed are placed at the end of the range.
 	// So, form the return iterator till end, we can directl use erase, since all removeable entities are at the end.
 	vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& e)
-		{
-			return !e->isActive();
-		}), vec.end());
+				{ return !e->isActive(); }), 
+				vec.end());
 }
 
 ptr<Entity> EntityManager::addEntity(const std::string& tag)

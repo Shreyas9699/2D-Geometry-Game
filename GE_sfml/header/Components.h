@@ -47,10 +47,10 @@ public:
 class CLifeSpan
 {
 public:
-	int remaining = 0;	// amount of lifespan remaining
-	int total = 0;		// Total life span
+	int remainingLife = 0;	// amount of lifespan remaining
+	int total = 0;
 	CLifeSpan(int t)
-		: remaining(t), total(t) {}
+		: remainingLife(t), total(t) {}
 };
 
 class CInput

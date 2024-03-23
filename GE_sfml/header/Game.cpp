@@ -1,4 +1,5 @@
 #include "Game.h"
+#include <ctime>
 
 Game::Game(const std::string& config)
 {
@@ -92,6 +93,7 @@ void Game::run()
         sCollision();
         sUserInput();
         sRender();
+        sLifeSpan();
         m_currentFrame++;
     }
 }
@@ -131,8 +133,12 @@ void Game::spawnEnemy()
     auto e = m_entities.addEntity("Enemy");
 
     // Random positions with in bounds
-    float posX = (rand() % (1 + m_window.getSize().x));
-    float posY = (rand() % (1 + m_window.getSize().y));
+    /* Edge case:
+        The enemy object taking ran positions such that they line exactly on the edge of the window
+        SOl: subtracting the range from SR to avoid getting the point that lie exactly on the screen edge */
+    srand(time(NULL)); // Seed rand() with the current system time; to avoid deterministic behavior.
+    float posX = 1 + m_enemyConfig.SR + (rand() % (m_window.getSize().x - 2 * m_enemyConfig.SR));
+    float posY = 1 + m_enemyConfig.SR + (rand() % (m_window.getSize().y - 2 * m_enemyConfig.SR));
 
     // Random Vertices
     int randV = m_enemyConfig.VMIN + (rand() % (1 + m_enemyConfig.VMAX - m_enemyConfig.VMIN));
@@ -141,13 +147,14 @@ void Game::spawnEnemy()
     int randS = m_enemyConfig.SMIN + (rand() % (int)(1 + m_enemyConfig.SMAX - m_enemyConfig.SMIN));
 
     // Randowm Colors
-    int randR = (rand() % 256);
-    int randG = (rand() % 256);
-    int randB = (rand() % 256);
+    int RGBMax = 255;
+    int randR = (rand() % RGBMax);
+    int randG = (rand() % RGBMax);
+    int randB = (rand() % RGBMax);
 
     e->cTransform = std::make_shared<CTransform>(Vec2(posX, posY), Vec2(randS, randS), 1.0f);
     e->cShape = std::make_shared<CShape>(m_enemyConfig.SR, randV, sf::Color(randR, randG, randB), sf::Color(m_enemyConfig.OR, m_enemyConfig.OG, m_enemyConfig.OB), m_playerConfig.OT);
-    e->cLifeSpan = std::make_shared<CLifeSpan>(5);
+    e->cLifeSpan = std::make_shared<CLifeSpan>(600); // frames is the life span of an enemy
 }
 
 void Game::spawnSmallEnemy(ptr<Entity> e)
@@ -179,10 +186,17 @@ void Game::spawnBullet(ptr<Entity> e, const Vec2& mousePos)
     // calculate the anlge between player and target / mouse position where it was clicked
     Vec2 dir = { (mousePos.x - e->cTransform->pos.x), (mousePos.y - e->cTransform->pos.y) };
     float angle = atan2(dir.x, dir.y);
-    std::cout << dir << "\n";
-    bulletEntity->cTransform = std::make_shared<CTransform>(Vec2(e->cTransform->pos), Vec2(m_bulletConfig.S, m_bulletConfig.S), angle);
-    bulletEntity->cTransform->velocity = Vec2(dir.x, dir.y);
+        
+    float magnitude = sqrt(dir.x * dir.x + dir.y * dir.y);
+    if (magnitude > 0.0001f) { // Avoid division by zero
+        dir.x /= magnitude;
+        dir.y /= magnitude;
+    };
+    Vec2 newPos = e->cTransform->pos + Vec2(m_playerConfig.SR, m_playerConfig.SR) * dir;
+    bulletEntity->cTransform = std::make_shared<CTransform>(newPos, Vec2(m_bulletConfig.S, m_bulletConfig.S), angle);
+    bulletEntity->cTransform->velocity = dir * m_bulletConfig.S;
     bulletEntity->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
+    bulletEntity->cLifeSpan = std::make_shared<CLifeSpan>(600);
 }
 
 void Game::spawnSpecialWeapon(ptr<Entity> e)
@@ -238,7 +252,7 @@ void Game::sMovement()
     m_player->cTransform->pos.y += m_player->cTransform->velocity.y;
 
     // Enemy Movement and Position Update
-    for (auto e : m_entities.getEntities("Enemy"))
+    for (auto& e : m_entities.getEntities("Enemy"))
     {
         // Reflect enemy at window boundaries
         if (e->cTransform->pos.x <= m_enemyConfig.SR || e->cTransform->pos.x >= windowWidth - playerRadius)
@@ -256,13 +270,13 @@ void Game::sMovement()
     }
 
     //  Bullet Position Update
-    for (auto e : m_entities.getEntities("Bullet"))
+    for (auto& e : m_entities.getEntities("Bullet"))
     {
         e->cTransform->pos.x += e->cTransform->velocity.x;
         e->cTransform->pos.y += e->cTransform->velocity.y;
     }
 
-    for (auto e : m_entities.getEntities("SmallEnemy"))
+    for (auto& e : m_entities.getEntities("SmallEnemy"))
     {
         e->cTransform->pos.x += e->cTransform->velocity.x;
         e->cTransform->pos.y += e->cTransform->velocity.y;
@@ -291,11 +305,14 @@ void Game::sUserInput()
         m_player->cInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
 
         // event when mouse button pressed, both left and right
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+        if (event.type == sf::Event::MouseButtonPressed)
         {
-            // Spawn a bullet at the mouse click position
-            Vec2 mousePos(event.mouseButton.x, event.mouseButton.y);
-            spawnBullet(m_player, mousePos);
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                // Spawn a bullet at the mouse click position
+                Vec2 target(event.mouseButton.x, event.mouseButton.y);
+                spawnBullet(m_player, target);
+            }
         }
 
         // event when mouce button pressed, both left and right
@@ -304,24 +321,43 @@ void Game::sUserInput()
 
 void Game::sLifeSpan()
 {
-    /* for all entities
-        - if entity has no lifespan componen, skip it if(!e->cLifeSpan)
-        - if enityt has lifespan > 0, reduce by 1
-        if it has lifespan and is alive
-            scale its alpha channel properly
-             auto color = e->cShape->circle.getFillColor();
-             
-             int newAlpha = 100;
-             sf::Color newColor(color.r, color.g, color.b, newAlpha);
-             e->cShape->circle.setFillColor(newColor);
-        
-        if it has lifespan and its time is up
-            destory the entity*/
-    for (auto e : m_entities.getEntities())
-    {
-        if (e->cLifeSpan)
-        {
+    /* This code calcuates the lispane of entites such as Bullet and Enemy
+            and apply fade effect as they come close to death */
 
+    double fadeQty = 0.0000005;
+    for (auto& e : m_entities.getEntities("Enemy"))
+    {
+        if (e->cLifeSpan->remainingLife > 0)
+        {
+            e->cLifeSpan->remainingLife--;
+            if (e->cLifeSpan->remainingLife < e->cLifeSpan->total / 2)
+            {
+                auto color = e->cShape->circle.getFillColor();
+                color.a -= fadeQty;
+                e->cShape->circle.setFillColor(color);
+                color = e->cShape->circle.getOutlineColor();
+                color.a -= fadeQty;
+                e->cShape->circle.setOutlineColor(color);
+            }
+        }
+        else
+        {
+            e->destory();
+        }
+    }
+
+    for (auto& e : m_entities.getEntities("Bullet"))
+    {
+        if (e->cLifeSpan->remainingLife > 0)
+        {
+            e->cLifeSpan->remainingLife--;
+            auto color = e->cShape->circle.getFillColor();
+            color.a -= fadeQty;
+            e->cShape->circle.setFillColor(color);
+        }
+        else
+        {
+            e->destory();
         }
     }
 }
@@ -342,7 +378,7 @@ void Game::sRender()
     m_window.draw(m_text);
 
     // Render entities
-    for (auto e : m_entities.getEntities())
+    for (auto& e : m_entities.getEntities())
     {
         // Calculate the position of the entity
         float posX = e->cTransform->pos.x;
