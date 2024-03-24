@@ -1,5 +1,7 @@
 #include "Game.h"
 #include <ctime>
+#define M_PI       3.14159265358979323846   // pi
+
 
 Game::Game(const std::string& config)
 {
@@ -75,7 +77,6 @@ void Game::init(const std::string& config)
 
     m_text.setFont(m_font);
     m_text.setCharacterSize(fontSize);
-    m_text.setString("Score : ");
     m_text.setFillColor(sf::Color(fontR, fontG, fontB));
     sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setPosition(0, 0);
@@ -118,8 +119,7 @@ void Game::spawnPlayer()
 void Game::sEnemySpawner()
 {
     // Users enemySpawnInterval to determine when the next emeny will be spawned
-    const int enemySpawnInterval = 100;
-    if (m_currentFrame >= m_lastEnemySpawnTime + enemySpawnInterval)
+    if (m_currentFrame >= m_lastEnemySpawnTime + m_enemyConfig.SI)
     {
         spawnEnemy();
     }
@@ -151,27 +151,45 @@ void Game::spawnEnemy()
     int randR = (rand() % RGBMax);
     int randG = (rand() % RGBMax);
     int randB = (rand() % RGBMax);
+    int randScore = (rand() % (500 - 100 + 1) / 5) * 5 + 100;
 
     e->cTransform = std::make_shared<CTransform>(Vec2(posX, posY), Vec2(randS, randS), 1.0f);
     e->cShape = std::make_shared<CShape>(m_enemyConfig.SR, randV, sf::Color(randR, randG, randB), sf::Color(m_enemyConfig.OR, m_enemyConfig.OG, m_enemyConfig.OB), m_playerConfig.OT);
-    e->cLifeSpan = std::make_shared<CLifeSpan>(600); // frames is the life span of an enemy
+    e->cLifeSpan = std::make_shared<CLifeSpan>(m_enemyConfig.L); // frames is the life span of an enemy
+    e->cScore = std::make_shared<CScore>(randScore);
 }
 
 void Game::spawnSmallEnemy(ptr<Entity> e)
 {
-    //Spawn small enemies at the loc of the input enemy e
-    //When we create smaller enemy, we have to read the values of the original enemy
-    //    - spawn a number of smaller enimies equal to the vertices of the original enemy
-    //    - set eacg small enemy to the same color or org, half the size
-     //   - small enimies are woth double points of the original enemy 
+    /*  Spawn small enemies at the loc of the input enemy e
+        When we create smaller enemy, we have to read the values of the original enemy
+            - spawn a number of smaller enimies equal to the vertices of the original enemy
+            - set eacg small enemy to the same color or org, half the size
+            - small enimies are woth double points of the original enemy 
+     */
 
-    int vertices = e->cShape->circle.getPointCount();
+    const int numVertices = e->cShape->circle.getPointCount();
+    const int r = e->cShape->circle.getRadius();
+    const float anglePerVertex = (2 * M_PI) / numVertices;
+    const sf::Color fillColor = e->cShape->circle.getFillColor();
+    const sf::Color outlineColor = e->cShape->circle.getOutlineColor();
+    const int OT = e->cShape->circle.getOutlineThickness();
+    const int score = e->cScore->score * 2;
 
-    for (int i = 0; i < vertices; i++)
+    for (int i = 0; i < numVertices; i++)
     {
-        auto smallEnemy = m_entities.addEntity("small");
-        smallEnemy->cScore = std::make_shared<CScore>(e->cScore->score * 2);
-        // read properties of org and set it to smaller ones
+        auto smallEnemy = m_entities.addEntity("SmallEnemy");
+        
+        float angle = anglePerVertex * (i + 1);
+        Vec2 offSetPos = Vec2(std::cos(angle) * r, std::sin(angle) * r);
+        
+        Vec2 pos = e->cTransform->pos + offSetPos;
+        Vec2 velocity = (e->cTransform->velocity + offSetPos) / (numVertices * 2);
+
+        smallEnemy->cTransform = std::make_shared<CTransform>(pos, velocity, angle);
+        smallEnemy->cShape = std::make_shared<CShape>(r / 2, numVertices, fillColor, outlineColor, OT);
+        smallEnemy->cScore = std::make_shared<CScore>(score);
+        smallEnemy->cLifeSpan = std::make_shared<CLifeSpan>(m_enemyConfig.L/ (numVertices * 5/2));
     }
 }
 
@@ -192,11 +210,11 @@ void Game::spawnBullet(ptr<Entity> e, const Vec2& mousePos)
         dir.x /= magnitude;
         dir.y /= magnitude;
     };
-    Vec2 newPos = e->cTransform->pos + Vec2(m_playerConfig.SR, m_playerConfig.SR) * dir;
+    Vec2 newPos = e->cTransform->pos + Vec2(m_playerConfig.SR * dir.x, m_playerConfig.SR * dir.y);
     bulletEntity->cTransform = std::make_shared<CTransform>(newPos, Vec2(m_bulletConfig.S, m_bulletConfig.S), angle);
     bulletEntity->cTransform->velocity = dir * m_bulletConfig.S;
     bulletEntity->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
-    bulletEntity->cLifeSpan = std::make_shared<CLifeSpan>(600);
+    bulletEntity->cLifeSpan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
 }
 
 void Game::spawnSpecialWeapon(ptr<Entity> e)
@@ -324,7 +342,7 @@ void Game::sLifeSpan()
     /* This code calcuates the lispane of entites such as Bullet and Enemy
             and apply fade effect as they come close to death */
 
-    double fadeQty = 0.0000005;
+    double fadeQty = 0.0000001;
     for (auto& e : m_entities.getEntities("Enemy"))
     {
         if (e->cLifeSpan->remainingLife > 0)
@@ -360,14 +378,83 @@ void Game::sLifeSpan()
             e->destory();
         }
     }
+
+    for (auto& e : m_entities.getEntities("SmallEnemy"))
+    {
+        if (e->cLifeSpan->remainingLife > 0)
+        {
+            e->cLifeSpan->remainingLife--;
+            auto color = e->cShape->circle.getFillColor();
+            color.a -= fadeQty;
+            e->cShape->circle.setFillColor(color);
+        }
+        else
+        {
+            e->destory();
+        }
+    }
 }
 
 void Game::sCollision()
 {
 
-    // collision between entities, player and enemies
-    // collision between enemies and bullets,
-    // use collision radius not the shape radius
+    /* collision between entities, player and enemies collision between enemies and bullets,  
+       collision radius not the shape radius
+    */
+    for (auto& e : m_entities.getEntities("Enemy"))
+    {
+        for (auto& b : m_entities.getEntities("Bullet"))
+        {
+            // get distance between both enemy and bullet
+            Vec2 posBullet = b->cTransform->pos;
+            Vec2 posEnemy = e->cTransform->pos;
+            float distanceBetween = posBullet.dist(posEnemy);
+            int CRsum = m_enemyConfig.CR + m_bulletConfig.CR;
+
+            // detect collision
+            if (distanceBetween < CRsum)
+            {
+                m_score += e->cScore->score;
+                spawnSmallEnemy(e);
+                e->destory();
+                b->destory();
+            }
+        }
+
+        // player and enemy collision
+        Vec2 posPlayer = m_player->cTransform->pos;
+        Vec2 posEnemy = e->cTransform->pos;
+        float distanceBetween = posPlayer.dist(posEnemy);
+        int CRsum = m_enemyConfig.CR + m_playerConfig.CR;
+
+        // detect collision
+        if (distanceBetween < CRsum)
+        {
+            m_player->destory();
+            spawnPlayer();
+        }
+        m_text.setString("Score: " + std::to_string(m_score));
+    }
+
+    for (auto& se : m_entities.getEntities("SmallEnemy"))
+    {
+        for (auto& b : m_entities.getEntities("Bullet"))
+        {
+            // get distance between both enemy and bullet
+            Vec2 posBullet = b->cTransform->pos;
+            Vec2 posEnemy = se->cTransform->pos;
+            float distanceBetween = posBullet.dist(posEnemy);
+            int CRsum = (m_enemyConfig.CR / 2) + m_bulletConfig.CR;
+
+            // detect collision
+            if (distanceBetween < CRsum)
+            {
+                m_score += se->cScore->score;
+                se->destory();
+            }
+        }
+    }
+    m_text.setString("Score: " + std::to_string(m_score));
 }
 
 void Game::sRender()
