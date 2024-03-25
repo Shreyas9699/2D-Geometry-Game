@@ -1,5 +1,4 @@
 #include "Game.h"
-#include <ctime>
 #define M_PI       3.14159265358979323846   // pi
 
 
@@ -81,28 +80,43 @@ void Game::init(const std::string& config)
     sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setPosition(0, 0);
 
-    // load the sound effects
-    if (!m_bufferHit.loadFromFile("audio/explosion.wav"))
+    if (!m_texture.loadFromFile("media/background.jpg"))
     {
-        std::cout << "Failed to load Hit audio effect\n";
+        std::cout << "Fail to upload the background ";
+    }
+    m_background.setTexture(m_texture);
+    float scale = std::min(static_cast<float>(winWidth) / m_texture.getSize().x, static_cast<float>(winHeight) / m_texture.getSize().y);
+    m_background.setScale(scale, scale);
+
+    // load the sound effects
+    if (!m_bufferHit.loadFromFile("media/audio/explosion.wav"))
+    {
+        std::cout << "Failed to load audio file\n";
         exit(-1);
     }
     m_hitAudio.setBuffer(m_bufferHit);
 
-    if (!m_bufferShoot.loadFromFile("audio/laserShoot.wav"))
+    if (!m_bufferShoot.loadFromFile("media/audio/laserShoot.wav"))
     {
-        std::cout << "Failed to load Laser Shoot audio effect\n";
+        std::cout << "Failed to load audio file\n";
         exit(-1);
     }
     m_shootAudio.setBuffer(m_bufferShoot);
 
 
-    if (!m_bufferDeath.loadFromFile("audio/Hurt.wav"))
+    if (!m_bufferDeath.loadFromFile("media/audio/Hurt.wav"))
     {
-        std::cout << "Failed to load Laser Shoot audio effect\n";
+        std::cout << "Failed to load audio file\n";
         exit(-1);
     }
     m_playerDeath.setBuffer(m_bufferDeath);
+
+    if (!m_bufferHitSE.loadFromFile("media/audio/explosionSmall.wav"))
+    {
+        std::cout << "Failed to load audio file\n";
+        exit(-1);
+    }
+    m_hitSEAudio.setBuffer(m_bufferHitSE);
 
     // spawn player entity
     spawnPlayer();
@@ -113,20 +127,17 @@ void Game::run()
     while (m_running)
     {
         m_entities.update();
-
         sEnemySpawner();
-        sMovement();
-        sCollision();
         sUserInput();
-        sRender();
-        sLifeSpan();
-        m_currentFrame++;
+        if (!m_paused)
+        {
+            sMovement();
+            sCollision();
+            sRender();
+            sLifeSpan();
+            m_currentFrame++;
+        }
     }
-}
-
-void Game::setPaused(bool paused)
-{
-
 }
 
 void Game::spawnPlayer()
@@ -240,7 +251,6 @@ void Game::spawnBullet(ptr<Entity> e, const Vec2& mousePos)
     bulletEntity->cTransform->velocity = dir * m_bulletConfig.S;
     bulletEntity->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
     bulletEntity->cLifeSpan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
-    m_shootAudio.play();
 }
 
 void Game::spawnSpecialWeapon(ptr<Entity> e)
@@ -341,25 +351,33 @@ void Game::sUserInput()
             m_window.close();
         }
 
-        // event when WASD keys are pressed
-        // event when WASD keys are pressed
-        m_player->cInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
-        m_player->cInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-        m_player->cInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-        m_player->cInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-
-        // event when mouse button pressed, both left and right
-        if (event.type == sf::Event::MouseButtonPressed)
+        // Event when P key to pause and resume the game
+        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P)
         {
-            if (event.mouseButton.button == sf::Mouse::Left)
-            {
-                // Spawn a bullet at the mouse click position
-                Vec2 target(event.mouseButton.x, event.mouseButton.y);
-                spawnBullet(m_player, target);
-            }
+            m_paused = !m_paused;
         }
 
-        // event when mouce button pressed, both left and right
+        // event when WASD keys are pressed
+        if (!m_paused)
+        {
+            m_player->cInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+            m_player->cInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+            m_player->cInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+            m_player->cInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    // Spawn a bullet at the mouse click position
+                    Vec2 target(event.mouseButton.x, event.mouseButton.y);
+                    m_shootAudio.play();
+                    spawnBullet(m_player, target);
+                }
+            }
+            // event when mouce button pressed, both left and right
+        }
+
     }
 }
 
@@ -478,6 +496,7 @@ void Game::sCollision()
             if (distanceBetween < CRsum)
             {
                 m_score += se->cScore->score;
+                m_hitSEAudio.play();
                 se->destory();
             }
         }
@@ -489,7 +508,8 @@ void Game::sRender()
 {
     m_window.clear();
 
-    // Draw Score
+    // Draw background and Score
+    m_window.draw(m_background);
     m_window.draw(m_text);
 
     // Render entities

@@ -27,10 +27,14 @@
     <ClInclude Include="header\Game.h" />
   </ItemGroup>
   <ItemGroup>
-    <Media Include="audio\Hit.wav" />
-    <Media Include="audio\laserShoot.wav" />
-    <Media Include="audio\explosion.wav" />
-    <Media Include="audio\powerUp.wav" />
-    <Media Include="audio\Hurt.wav" />
+    <Media Include="media\audio\Hit.wav" />
+    <Media Include="media\audio\laserShoot.wav" />
+    <Media Include="media\audio\explosion.wav" />
+    <Media Include="media\audio\powerUp.wav" />
+    <Media Include="media\audio\Hurt.wav" />
+    <Media Include="media\audio\explosionSmall.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="media\background.jpg" />
   </ItemGroup>
 </Project>

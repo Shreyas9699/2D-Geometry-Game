@@ -169,11 +169,15 @@
     <ClInclude Include="header\Vec2.h" />
   </ItemGroup>
   <ItemGroup>
-    <Media Include="audio\explosion.wav" />
-    <Media Include="audio\Hit.wav" />
-    <Media Include="audio\Hurt.wav" />
-    <Media Include="audio\laserShoot.wav" />
-    <Media Include="audio\powerUp.wav" />
+    <Media Include="media\audio\explosion.wav" />
+    <Media Include="media\audio\explosionSmall.wav" />
+    <Media Include="media\audio\Hit.wav" />
+    <Media Include="media\audio\Hurt.wav" />
+    <Media Include="media\audio\laserShoot.wav" />
+    <Media Include="media\audio\powerUp.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="media\background.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

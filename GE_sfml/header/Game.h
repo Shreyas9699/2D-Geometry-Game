@@ -29,12 +29,16 @@ class Game
 	EntityManager		m_entities;					// vector of entities to maintain
 	sf::Font			m_font;						// the font we will use to draw
 	sf::Text			m_text;						// the score text to be drawn to the screen
+	sf::Texture			m_texture;					// to load the background
+	sf::Sprite			m_background;
 	sf::SoundBuffer		m_bufferHit;				// to Load hit audio file
 	sf::SoundBuffer		m_bufferShoot;				// to Load Shoot audio file
 	sf::SoundBuffer		m_bufferDeath;				// to Load player death audio file
+	sf::SoundBuffer		m_bufferHitSE;				// to Load player death audio file
 	sf::Sound			m_hitAudio;
 	sf::Sound			m_shootAudio;
 	sf::Sound			m_playerDeath;
+	sf::Sound			m_hitSEAudio;
 	PlayerConfig		m_playerConfig;
 	EnemyConfig			m_enemyConfig;
 	BulletConfig		m_bulletConfig;
@@ -43,11 +47,10 @@ class Game
 	int					m_lastEnemySpawnTime = 0;
 	bool				m_paused = false;			// whether we updated game logic
 	bool				m_running = true;			// whether the game is running
-
+	
 	ptr<Entity> m_player;
 
 	void init(const std::string& config);			// initialized the GameState with config file path
-	void setPaused(bool paused);					// pause the game
 
 	void sMovement();								// System: Entity position / movement update
 	void sUserInput();								// System: User Input
@@ -63,6 +66,6 @@ class Game
 	void spawnSpecialWeapon(ptr<Entity> e);
 
 public:
-	Game(const std::string& config); 
+	Game(const std::string& config);
 	void run();
 };
