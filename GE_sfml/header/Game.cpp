@@ -1,5 +1,4 @@
 #include "Game.h"
-#define M_PI       3.14159265358979323846   // pi
 
 
 Game::Game(const std::string& config)
@@ -58,15 +57,23 @@ void Game::init(const std::string& config)
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     if (fsMode) {
-        m_window.create(sf::VideoMode(winWidth, winHeight), "My SFML Game", sf::Style::Fullscreen);
+        m_window.create(sf::VideoMode(winWidth, winHeight), "Geometry War", sf::Style::Fullscreen);
     }
     else
     {
-        m_window.create(sf::VideoMode(winWidth, winHeight), "SFML Game!", sf::Style::Default, settings);
+        m_window.create(sf::VideoMode(winWidth, winHeight), "Geometry War", sf::Style::Default, settings);
     }
     m_window.setFramerateLimit(FPS);
 
- 
+    if (!m_icon.loadFromFile("media/Icon.png")) {
+        // Handle error if the image fails to load
+        std::cerr << "Failed to the icon image, but still continuing\n";
+    }
+    else
+    {
+        m_window.setIcon(m_icon.getSize().x, m_icon.getSize().y, m_icon.getPixelsPtr());
+    }
+    
     if (!m_font.loadFromFile(fontFileName))
     {
         // if can't load the font file
@@ -77,12 +84,19 @@ void Game::init(const std::string& config)
     m_text.setFont(m_font);
     m_text.setCharacterSize(fontSize);
     m_text.setFillColor(sf::Color(fontR, fontG, fontB));
-    sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setPosition(0, 0);
 
-    if (!m_texture.loadFromFile("media/background.jpg"))
+    m_instrunction.setFont(m_font);
+    m_instrunction.setCharacterSize(fontSize * 0.8);
+    m_instrunction.setFillColor(sf::Color(fontR, fontG, fontB));
+    m_instrunction.setString("Press P to Pause/Play ");
+    sf::FloatRect textRect = m_instrunction.getLocalBounds();
+    m_instrunction.setPosition(winWidth - textRect.width, 0);
+    
+
+    if (!m_texture.loadFromFile("media/BGIMG.png"))
     {
-        std::cout << "Fail to upload the background ";
+        std::cout << "Fail to upload the background Image\n";
     }
     m_background.setTexture(m_texture);
     float scale = std::min(static_cast<float>(winWidth) / m_texture.getSize().x, static_cast<float>(winHeight) / m_texture.getSize().y);
@@ -172,9 +186,10 @@ void Game::spawnEnemy()
     /* Edge case:
         The enemy object taking ran positions such that they line exactly on the edge of the window
         SOl: subtracting the range from SR to avoid getting the point that lie exactly on the screen edge */
-    srand(time(NULL)); // Seed rand() with the current system time; to avoid deterministic behavior.
-    float posX = 1 + m_enemyConfig.SR + (rand() % (m_window.getSize().x - 2 * m_enemyConfig.SR));
-    float posY = 1 + m_enemyConfig.SR + (rand() % (m_window.getSize().y - 2 * m_enemyConfig.SR));
+    std::random_device rd;
+    srand(rd()); // Seed with a more unpredictable value, to avoid deterministic behavior.
+    float posX = m_enemyConfig.SR + (rand() % (m_window.getSize().x - 2 * m_enemyConfig.SR)) + 1;
+    float posY = m_enemyConfig.SR + (rand() % (m_window.getSize().y - 2 * m_enemyConfig.SR)) + 1;
 
     // Random Vertices
     int randV = m_enemyConfig.VMIN + (rand() % (1 + m_enemyConfig.VMAX - m_enemyConfig.VMIN));
@@ -220,7 +235,7 @@ void Game::spawnSmallEnemy(ptr<Entity> e)
         Vec2 offSetPos = Vec2(std::cos(angle) * r, std::sin(angle) * r);
         
         Vec2 pos = e->cTransform->pos + offSetPos;
-        Vec2 velocity = (e->cTransform->velocity + offSetPos) / (numVertices * 2);
+        Vec2 velocity = (e->cTransform->velocity + offSetPos) / (numVertices * 1.5);
 
         smallEnemy->cTransform = std::make_shared<CTransform>(pos, velocity, angle);
         smallEnemy->cShape = std::make_shared<CShape>(r / 2, numVertices, fillColor, outlineColor, OT);
@@ -348,6 +363,7 @@ void Game::sUserInput()
         // this event is triggered when the close button is clicked
         if (event.type == sf::Event::Closed)
         {
+            m_running = false;
             m_window.close();
         }
 
@@ -479,7 +495,6 @@ void Game::sCollision()
             m_player->destory();
             spawnPlayer();
         }
-        m_text.setString("Score: " + std::to_string(m_score));
     }
 
     for (auto& se : m_entities.getEntities("SmallEnemy"))
@@ -511,6 +526,7 @@ void Game::sRender()
     // Draw background and Score
     m_window.draw(m_background);
     m_window.draw(m_text);
+    m_window.draw(m_instrunction);
 
     // Render entities
     for (auto& e : m_entities.getEntities())
@@ -529,7 +545,5 @@ void Game::sRender()
         // Draw the shape of the entity
         m_window.draw(e->cShape->circle);
     }
-
     m_window.display();
 }
-

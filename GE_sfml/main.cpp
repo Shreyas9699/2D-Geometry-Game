@@ -5,7 +5,6 @@ int main()
 {
     try
     {
-        
         Game g("config.txt");
         g.run();
     }

@@ -13,8 +13,11 @@
 #include <map>
 #include <chrono>
 #include <algorithm>
+#include <random>
 
 #include "Vec2.h"
+
+#define M_PI       3.14159265358979323846   // pi
 
 // Creates a new alias (ptr) that is equivalent to std::shared_ptr<T>
 template <class T> using ptr = std::shared_ptr<T>;

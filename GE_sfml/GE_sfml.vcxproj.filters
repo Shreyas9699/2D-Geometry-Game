@@ -11,11 +11,7 @@
     <Text Include="config.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Font Include="fonts\cornate.otf" />
     <Font Include="fonts\Courier New.ttf" />
-    <Font Include="fonts\CourierNewBoldItalicfont.ttf" />
-    <Font Include="fonts\Freedom.ttf" />
-    <Font Include="fonts\NatureBeauty.ttf" />
     <Font Include="fonts\ArialRegular.ttf" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +31,7 @@
     <Media Include="media\audio\explosionSmall.wav" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="media\background.jpg" />
+    <Image Include="media\BGIMG.png" />
+    <Image Include="media\Icon.png" />
   </ItemGroup>
 </Project>

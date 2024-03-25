@@ -154,11 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\ArialRegular.ttf" />
-    <Font Include="fonts\cornate.otf" />
     <Font Include="fonts\Courier New.ttf" />
-    <Font Include="fonts\CourierNewBoldItalicfont.ttf" />
-    <Font Include="fonts\Freedom.ttf" />
-    <Font Include="fonts\NatureBeauty.ttf" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\CommonHF.h" />
@@ -177,7 +173,8 @@
     <Media Include="media\audio\powerUp.wav" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="media\background.jpg" />
+    <Image Include="media\BGIMG.png" />
+    <Image Include="media\Icon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

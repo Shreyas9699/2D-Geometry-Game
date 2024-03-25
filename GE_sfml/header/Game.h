@@ -29,6 +29,8 @@ class Game
 	EntityManager		m_entities;					// vector of entities to maintain
 	sf::Font			m_font;						// the font we will use to draw
 	sf::Text			m_text;						// the score text to be drawn to the screen
+	sf::Text			m_instrunction;				// text to display game play pause inst
+	sf::Image			m_icon;						// to load the icon
 	sf::Texture			m_texture;					// to load the background
 	sf::Sprite			m_background;
 	sf::SoundBuffer		m_bufferHit;				// to Load hit audio file
@@ -42,7 +44,7 @@ class Game
 	PlayerConfig		m_playerConfig;
 	EnemyConfig			m_enemyConfig;
 	BulletConfig		m_bulletConfig;
-	int					m_score = 0;				// player score
+	long int			m_score = 0;				// player score
 	int					m_currentFrame = 0;			
 	int					m_lastEnemySpawnTime = 0;
 	bool				m_paused = false;			// whether we updated game logic
