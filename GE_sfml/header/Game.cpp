@@ -80,6 +80,31 @@ void Game::init(const std::string& config)
     m_text.setFillColor(sf::Color(fontR, fontG, fontB));
     sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setPosition(0, 0);
+
+    // load the sound effects
+    if (!m_bufferHit.loadFromFile("audio/explosion.wav"))
+    {
+        std::cout << "Failed to load Hit audio effect\n";
+        exit(-1);
+    }
+    m_hitAudio.setBuffer(m_bufferHit);
+
+    if (!m_bufferShoot.loadFromFile("audio/laserShoot.wav"))
+    {
+        std::cout << "Failed to load Laser Shoot audio effect\n";
+        exit(-1);
+    }
+    m_shootAudio.setBuffer(m_bufferShoot);
+
+
+    if (!m_bufferDeath.loadFromFile("audio/Hurt.wav"))
+    {
+        std::cout << "Failed to load Laser Shoot audio effect\n";
+        exit(-1);
+    }
+    m_playerDeath.setBuffer(m_bufferDeath);
+
+    // spawn player entity
     spawnPlayer();
 }
 
@@ -215,6 +240,7 @@ void Game::spawnBullet(ptr<Entity> e, const Vec2& mousePos)
     bulletEntity->cTransform->velocity = dir * m_bulletConfig.S;
     bulletEntity->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
     bulletEntity->cLifeSpan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
+    m_shootAudio.play();
 }
 
 void Game::spawnSpecialWeapon(ptr<Entity> e)
@@ -415,6 +441,7 @@ void Game::sCollision()
             if (distanceBetween < CRsum)
             {
                 m_score += e->cScore->score;
+                m_hitAudio.play();
                 spawnSmallEnemy(e);
                 e->destory();
                 b->destory();
@@ -430,6 +457,7 @@ void Game::sCollision()
         // detect collision
         if (distanceBetween < CRsum)
         {
+            m_playerDeath.play();
             m_player->destory();
             spawnPlayer();
         }

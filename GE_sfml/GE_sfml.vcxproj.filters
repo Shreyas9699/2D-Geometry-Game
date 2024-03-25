@@ -26,4 +26,11 @@
     <ClInclude Include="header\Vec2.h" />
     <ClInclude Include="header\Game.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="audio\Hit.wav" />
+    <Media Include="audio\laserShoot.wav" />
+    <Media Include="audio\explosion.wav" />
+    <Media Include="audio\powerUp.wav" />
+    <Media Include="audio\Hurt.wav" />
+  </ItemGroup>
 </Project>

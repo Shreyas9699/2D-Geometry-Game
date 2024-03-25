@@ -3,7 +3,7 @@
 // This is a common header file that includes all commonly used header files in this project
 
 #include <SFML/Graphics.hpp>
-#include <SFML/audio.hpp>
+#include <SFML/Audio.hpp>
 
 #include <iostream> 
 #include <fstream> 

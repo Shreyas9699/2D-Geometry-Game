@@ -29,6 +29,12 @@ class Game
 	EntityManager		m_entities;					// vector of entities to maintain
 	sf::Font			m_font;						// the font we will use to draw
 	sf::Text			m_text;						// the score text to be drawn to the screen
+	sf::SoundBuffer		m_bufferHit;				// to Load hit audio file
+	sf::SoundBuffer		m_bufferShoot;				// to Load Shoot audio file
+	sf::SoundBuffer		m_bufferDeath;				// to Load player death audio file
+	sf::Sound			m_hitAudio;
+	sf::Sound			m_shootAudio;
+	sf::Sound			m_playerDeath;
 	PlayerConfig		m_playerConfig;
 	EnemyConfig			m_enemyConfig;
 	BulletConfig		m_bulletConfig;
