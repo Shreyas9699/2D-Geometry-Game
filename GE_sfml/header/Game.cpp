@@ -4,6 +4,7 @@
 Game::Game(const std::string& config)
 {
 	init(config);
+    m_lastSpecialWeaponTime = std::chrono::steady_clock::now();
 }
 
 void Game::init(const std::string& config)
@@ -131,6 +132,13 @@ void Game::init(const std::string& config)
         exit(-1);
     }
     m_hitSEAudio.setBuffer(m_bufferHitSE);
+
+    if (!m_bufferPowerUp.loadFromFile("media/audio/powerUp.wav"))
+    {
+        std::cout << "Failed to load audio file\n";
+        exit(-1);
+    }
+    m_powerUpAudio.setBuffer(m_bufferPowerUp);
 
     // spawn player entity
     spawnPlayer();
@@ -270,7 +278,48 @@ void Game::spawnBullet(ptr<Entity> e, const Vec2& mousePos)
 
 void Game::spawnSpecialWeapon(ptr<Entity> e)
 {
-    /*Implement special weapon when right clicked*/
+    /*Implement special weapon when right clicked
+        get continuous bullets from each vertices of the player while player keeps moving, for like 10 seconds*/
+
+    // Get the current time
+    auto currentTime = std::chrono::steady_clock::now();
+
+    std::thread bulletThread([this, e]() {
+        const int numVertices = e->cShape->circle.getPointCount();
+        const float anglePerVertex = (2 * M_PI) / numVertices;
+        const int r = e->cShape->circle.getRadius();
+
+        // Timing parameters
+        constexpr int durationSeconds = 3; // Duration in seconds
+
+        // Start time
+        auto startTime = std::chrono::steady_clock::now();
+
+        // Loop until the duration has elapsed
+        while (true)
+        {
+            // Check if the duration has elapsed
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+            if (elapsedTime >= durationSeconds)
+                break; // Exit the loop if duration has elapsed
+
+            // Spawn bullets from each vertex of the player
+            for (int i = 0; i < numVertices; i++)
+            {
+                float angle = anglePerVertex * (i + 1);
+                Vec2 offSetPos = Vec2(std::cos(angle) * r, std::sin(angle) * r);
+                Vec2 pos = e->cTransform->pos + offSetPos;
+                spawnBullet(e, pos);
+            }
+
+            // Introduce a small delay between bullet spawns
+            std::this_thread::sleep_for(std::chrono::milliseconds(150)); // Adjust delay as needed
+        }
+        });
+
+    // Detach the thread so it runs independently
+    bulletThread.detach();
 }
 
 void Game::sMovement()
@@ -390,8 +439,18 @@ void Game::sUserInput()
                     m_shootAudio.play();
                     spawnBullet(m_player, target);
                 }
+                else if (event.mouseButton.button == sf::Mouse::Right) 
+                {
+                    auto currentTime = std::chrono::steady_clock::now();
+                    if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - m_lastSpecialWeaponTime) >= std::chrono::seconds(15))
+                    {
+                        //m_laserShootAudio.play();
+                        m_lastSpecialWeaponTime = currentTime;
+                        m_powerUpAudio.play();
+                        spawnSpecialWeapon(m_player);
+                    }
+                }
             }
-            // event when mouce button pressed, both left and right
         }
 
     }

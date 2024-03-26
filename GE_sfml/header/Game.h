@@ -37,10 +37,12 @@ class Game
 	sf::SoundBuffer		m_bufferShoot;				// to Load Shoot audio file
 	sf::SoundBuffer		m_bufferDeath;				// to Load player death audio file
 	sf::SoundBuffer		m_bufferHitSE;				// to Load player death audio file
+	sf::SoundBuffer		m_bufferPowerUp;			// to Load player death audio file
 	sf::Sound			m_hitAudio;
 	sf::Sound			m_shootAudio;
 	sf::Sound			m_playerDeath;
 	sf::Sound			m_hitSEAudio;
+	sf::Sound			m_powerUpAudio;
 	PlayerConfig		m_playerConfig;
 	EnemyConfig			m_enemyConfig;
 	BulletConfig		m_bulletConfig;
@@ -49,6 +51,7 @@ class Game
 	int					m_lastEnemySpawnTime = 0;
 	bool				m_paused = false;			// whether we updated game logic
 	bool				m_running = true;			// whether the game is running
+	std::chrono::steady_clock::time_point m_lastSpecialWeaponTime;
 	
 	ptr<Entity> m_player;
 

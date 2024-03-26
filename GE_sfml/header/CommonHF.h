@@ -14,6 +14,7 @@
 #include <chrono>
 #include <algorithm>
 #include <random>
+#include <thread>
 
 #include "Vec2.h"
 
