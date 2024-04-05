@@ -410,7 +410,7 @@ void Game::sUserInput()
     while (m_window.pollEvent(event))
     {
         // this event is triggered when the close button is clicked
-        if (event.type == sf::Event::Closed)
+        if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape)
         {
             m_running = false;
             m_window.close();
