@@ -13,7 +13,8 @@ void Game::init(const std::string& config)
     std::ifstream fin(config);
 
     // Check if the file is successfully opened 
-    if (!fin.is_open()) {
+    if (!fin.is_open()) 
+    {
         std::cerr << "Error opening the file!" << "\n";
         exit;
     }
@@ -22,7 +23,10 @@ void Game::init(const std::string& config)
     int winWidth = 1280, winHeight = 720, FPS = 60, fsMode = 1;
 
     std::string fontFileName;
-    int fontSize, fontR, fontG, fontB;
+    int fontSize = 20;
+    int fontR = 255;
+    int fontG = 255;
+    int fontB = 255;
 
     std::string line;
     while (std::getline(fin, line)) {
@@ -88,7 +92,7 @@ void Game::init(const std::string& config)
     m_text.setPosition(0, 0);
 
     m_instrunction.setFont(m_font);
-    m_instrunction.setCharacterSize(fontSize * 0.8);
+    m_instrunction.setCharacterSize(static_cast<int>(fontSize * 0.8));
     m_instrunction.setFillColor(sf::Color(fontR, fontG, fontB));
     m_instrunction.setString("Press P to Pause/Play ");
     sf::FloatRect textRect = m_instrunction.getLocalBounds();
@@ -172,6 +176,9 @@ void Game::spawnPlayer()
                                             sf::Color(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB), m_playerConfig.OT);
     e->cInput = std::make_shared<CInput>();
     m_player = e;
+    // Set player invulnerable and record start time
+    m_playerInvulnerable = true;
+    m_playerInvulnerableStartTime = std::chrono::steady_clock::now();
 }
 
 void Game::sEnemySpawner()
@@ -212,7 +219,7 @@ void Game::spawnEnemy()
     int randB = (rand() % RGBMax);
     int randScore = (rand() % (500 - 100 + 1) / 5) * 5 + 100;
 
-    e->cTransform = std::make_shared<CTransform>(Vec2(posX, posY), Vec2(randS, randS), 1.0f);
+    e->cTransform = std::make_shared<CTransform>(Vec2(float(posX), float(posY)), Vec2(float(randS), float(randS)), 1.0f);
     e->cShape = std::make_shared<CShape>(m_enemyConfig.SR, randV, sf::Color(randR, randG, randB), sf::Color(m_enemyConfig.OR, m_enemyConfig.OG, m_enemyConfig.OB), m_playerConfig.OT);
     e->cLifeSpan = std::make_shared<CLifeSpan>(m_enemyConfig.L); // frames is the life span of an enemy
     e->cScore = std::make_shared<CScore>(randScore);
@@ -229,7 +236,7 @@ void Game::spawnSmallEnemy(ptr<Entity> e)
 
     const int numVertices = e->cShape->circle.getPointCount();
     const int r = e->cShape->circle.getRadius();
-    const float anglePerVertex = (2 * M_PI) / numVertices;
+    const float anglePerVertex = static_cast<float>((2 * M_PI) / numVertices);
     const sf::Color fillColor = e->cShape->circle.getFillColor();
     const sf::Color outlineColor = e->cShape->circle.getOutlineColor();
     const int OT = e->cShape->circle.getOutlineThickness();
@@ -286,7 +293,7 @@ void Game::spawnSpecialWeapon(ptr<Entity> e)
 
     std::thread bulletThread([this, e]() {
         const int numVertices = e->cShape->circle.getPointCount();
-        const float anglePerVertex = (2 * M_PI) / numVertices;
+        const float anglePerVertex = static_cast<float>((2 * M_PI) / numVertices);
         const int r = e->cShape->circle.getRadius();
 
         // Timing parameters
@@ -324,6 +331,16 @@ void Game::spawnSpecialWeapon(ptr<Entity> e)
 
 void Game::sMovement()
 {
+    // Check if invulnerability should end
+    if (m_playerInvulnerable) 
+    {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_playerInvulnerableStartTime).count();
+        if (elapsed >= m_playerInvulnerableTime) 
+        {
+            m_playerInvulnerable = false;
+        }
+    }
     float windowWidth = static_cast<float>(m_window.getSize().x);
     float windowHeight = static_cast<float>(m_window.getSize().y);
 
@@ -435,7 +452,7 @@ void Game::sUserInput()
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     // Spawn a bullet at the mouse click position
-                    Vec2 target(event.mouseButton.x, event.mouseButton.y);
+                    Vec2 target(float(event.mouseButton.x), float(event.mouseButton.y));
                     m_shootAudio.play();
                     spawnBullet(m_player, target);
                 }
@@ -461,7 +478,7 @@ void Game::sLifeSpan()
     /* This code calcuates the lispane of entites such as Bullet and Enemy
             and apply fade effect as they come close to death */
 
-    double fadeQty = 0.0000001;
+    sf::Uint8 fadeQty = 0.0000001;
     for (auto& e : m_entities.getEntities("Enemy"))
     {
         if (e->cLifeSpan->remainingLife > 0)
@@ -548,7 +565,7 @@ void Game::sCollision()
         int CRsum = m_enemyConfig.CR + m_playerConfig.CR;
 
         // detect collision
-        if (distanceBetween < CRsum)
+        if (!m_playerInvulnerable && distanceBetween < CRsum)
         {
             m_playerDeath.play();
             m_player->destory();
@@ -596,6 +613,29 @@ void Game::sRender()
 
         // Set the position of the shape in the entity
         e->cShape->circle.setPosition(posX, posY);
+
+        // If this entity is the player, handle blinking
+        if (e == m_player && m_playerInvulnerable) 
+        {
+            int blinkPeriod = 10;
+            bool blinkOn = ((m_currentFrame / blinkPeriod) % 2) == 0;
+            sf::Color fill = e->cShape->circle.getFillColor();
+            sf::Color outline = e->cShape->circle.getOutlineColor();
+            fill.a = blinkOn ? 128 : 255;
+            outline.a = blinkOn ? 128 : 255;
+            e->cShape->circle.setFillColor(fill);
+            e->cShape->circle.setOutlineColor(outline);
+        }
+        else if (e == m_player) 
+        {
+            // Ensure player is fully opaque when not invulnerable
+            sf::Color fill = e->cShape->circle.getFillColor();
+            sf::Color outline = e->cShape->circle.getOutlineColor();
+            fill.a = 255;
+            outline.a = 255;
+            e->cShape->circle.setFillColor(fill);
+            e->cShape->circle.setOutlineColor(outline);
+        }
 
         // Rotate the shape for visual interest
         float angle = 1.0f;

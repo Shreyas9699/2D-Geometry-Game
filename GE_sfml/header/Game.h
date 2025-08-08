@@ -51,6 +51,9 @@ class Game
 	int					m_lastEnemySpawnTime = 0;
 	bool				m_paused = false;			// whether we updated game logic
 	bool				m_running = true;			// whether the game is running
+	int					m_playerInvulnerableTime = 1000; // Invulnerable time after player death spawn in milliseconds (1.0s)
+	bool				m_playerInvulnerable = false;
+	std::chrono::steady_clock::time_point m_playerInvulnerableStartTime; // Track invulnerability start time
 	std::chrono::steady_clock::time_point m_lastSpecialWeaponTime;
 	
 	ptr<Entity> m_player;
